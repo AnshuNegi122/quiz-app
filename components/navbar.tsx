@@ -20,7 +20,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
+          {/* <div className="hidden md:flex items-center gap-8">
             <Link href="/" className="text-foreground/80 hover:text-primary transition-colors">
               Home
             </Link>
@@ -30,7 +30,7 @@ export default function Navbar() {
             <Link href="/admin/login" className="text-foreground/80 hover:text-primary transition-colors">
               Admin
             </Link>
-          </div>
+          </div> */}
 
           <button
             className="md:hidden"

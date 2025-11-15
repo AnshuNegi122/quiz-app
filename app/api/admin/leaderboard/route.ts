@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       .sort({ score: -1, submittedAt: 1 })
       .skip(skip)
       .limit(limit)
-      .select('name email score submittedAt')
+      .select('name email score submittedAt durationSeconds')
       .lean();
 
     // Get total count
@@ -39,9 +39,14 @@ export async function GET(req: NextRequest) {
       const obfuscatedEmail =
         emailParts[0].substring(0, 3) + '***@' + emailParts[1];
 
-      // Calculate time taken (if we had start time, we'd calculate duration)
-      // For now, we'll use a placeholder
-      const timeTaken = 'N/A';
+      // Calculate time taken: use durationSeconds if available; otherwise compute from submittedAt - startedAt if present
+      let timeTaken = 'N/A';
+      const seconds = (participant as any).durationSeconds;
+      if (typeof seconds === 'number' && seconds > 0) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        timeTaken = `${m}m ${s}s`;
+      }
 
       return {
         rank: skip + index + 1,

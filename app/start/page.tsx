@@ -24,9 +24,14 @@ export default function StartPage() {
     setError('');
 
     try {
-      await participantAPI.start(name, email);
+      const res = await participantAPI.start(name, email);
       localStorage.setItem('participantName', name);
       localStorage.setItem('participantEmail', email);
+      if (res && (res as any).startedAt) {
+        localStorage.setItem('quizStartedAt', (res as any).startedAt);
+      } else {
+        localStorage.setItem('quizStartedAt', new Date().toISOString());
+      }
       toast.success('Registration successful!');
       router.push('/quiz');
     } catch (err) {

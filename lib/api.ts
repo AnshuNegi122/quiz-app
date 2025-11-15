@@ -25,8 +25,11 @@ export const adminAPI = {
   },
 
   logout: async () => {
-    // Clear cookie by setting it to expire
-    document.cookie = 'adminToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    const response = await fetch('/api/admin/logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    return handleResponse<{ success: boolean; message: string }>(response);
   },
 
   getStats: async () => {
@@ -82,19 +85,11 @@ export const adminAPI = {
     }>(response);
   },
 
-  createQuestion: async (question: {
-    title: string;
-    options: string[];
-    correctOption: number;
-    points?: number;
-  }) => {
+  createQuestion: async (formData: FormData) => {
     const response = await fetch('/api/admin/questions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       credentials: 'include',
-      body: JSON.stringify(question),
+      body: formData,
     });
     return handleResponse<{
       success: boolean;
@@ -104,27 +99,17 @@ export const adminAPI = {
         options: string[];
         correctOption: number;
         points: number;
+        imageUrl?: string | null;
         createdAt: string;
       };
     }>(response);
   },
 
-  updateQuestion: async (
-    id: string,
-    question: {
-      title: string;
-      options: string[];
-      correctOption: number;
-      points?: number;
-    }
-  ) => {
+  updateQuestion: async (id: string, formData: FormData) => {
     const response = await fetch(`/api/admin/questions/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       credentials: 'include',
-      body: JSON.stringify(question),
+      body: formData,
     });
     return handleResponse<{
       success: boolean;
@@ -134,6 +119,7 @@ export const adminAPI = {
         options: string[];
         correctOption: number;
         points: number;
+        imageUrl?: string | null;
         createdAt: string;
       };
     }>(response);
@@ -169,17 +155,24 @@ export const participantAPI = {
         title: string;
         options: string[];
         points: number;
+        imageUrl?: string | null;
       }>;
     }>(response);
   },
 
+  status: async (email: string) => {
+    const response = await fetch(`/api/participant/status?email=${encodeURIComponent(email)}`);
+    return handleResponse<{ hasTaken: boolean }>(response);
+  },
+
   submit: async (name: string, email: string, answers: Array<{ questionId: string; answer: number }>) => {
+    const startedAt = localStorage.getItem('quizStartedAt');
     const response = await fetch('/api/participant/submit', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, email, answers }),
+      body: JSON.stringify({ name, email, answers, startedAt }),
     });
     return handleResponse<{
       success: boolean;
@@ -187,6 +180,8 @@ export const participantAPI = {
         id: string;
         name: string;
         score: number;
+        correctCount?: number;
+        totalQuestions?: number;
         submittedAt: string;
       };
     }>(response);

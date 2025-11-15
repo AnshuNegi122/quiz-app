@@ -12,6 +12,8 @@ export interface IParticipant extends Document {
   score: number;
   submittedAt: Date;
   attemptCount: number;
+  startedAt?: Date;
+  durationSeconds?: number;
 }
 
 const ParticipantSchema: Schema = new Schema(
@@ -56,6 +58,14 @@ const ParticipantSchema: Schema = new Schema(
     attemptCount: {
       type: Number,
       default: 1,
+    },
+    startedAt: {
+      type: Date,
+    },
+    durationSeconds: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {

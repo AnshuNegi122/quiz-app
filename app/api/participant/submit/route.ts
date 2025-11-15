@@ -35,16 +35,45 @@ export async function POST(req: NextRequest) {
     }
 
     // Get all questions to calculate score
-    const questions = await Question.find().lean();
+    const questions = await Question.find().sort({ createdAt: 1 }).lean();
 
     if (questions.length === 0) {
       throw new AppError('No questions available', 400);
     }
 
-    // Calculate score on server
-    let totalScore = 0;
-    let maxScore = 0;
+    // Calculate score on server - count correct answers
+    let correctCount = 0;
+    let totalQuestions = questions.length;
 
+    // Create a map of submitted answers by questionId
+    const answerMap = new Map();
+    answers.forEach((answer: any) => {
+      answerMap.set(answer.questionId.toString(), answer.answer);
+    });
+
+    // Check each question
+    questions.forEach((question) => {
+      const submittedAnswer = answerMap.get(question._id.toString());
+      if (submittedAnswer !== undefined && submittedAnswer === question.correctOption) {
+        correctCount++;
+      }
+    });
+
+    // Calculate percentage score
+    const percentageScore = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+
+    // Duration: derive from submittedAt - startedAt if provided by client/local, but we prefer server computed.
+    // If client provided a startedAt header or we stored one in a future enhancement, we could use it.
+    // For now, accept startedAt from body optionally and compute duration.
+    let durationSeconds = 0;
+    if (body.startedAt) {
+      const startedAtDate = new Date(body.startedAt);
+      if (!isNaN(startedAtDate.getTime())) {
+        durationSeconds = Math.max(0, Math.round((Date.now() - startedAtDate.getTime()) / 1000));
+      }
+    }
+
+    // Map answers for storage
     const validatedAnswers = answers.map((answer: any) => {
       const question = questions.find(
         (q) => q._id.toString() === answer.questionId.toString()
@@ -54,21 +83,11 @@ export async function POST(req: NextRequest) {
         throw new AppError(`Question ${answer.questionId} not found`, 400);
       }
 
-      maxScore += question.points;
-
-      const isCorrect = question.correctOption === answer.answer;
-      if (isCorrect) {
-        totalScore += question.points;
-      }
-
       return {
         questionId: new mongoose.Types.ObjectId(answer.questionId),
         answer: answer.answer,
       };
     });
-
-    // Calculate percentage score
-    const percentageScore = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
 
     // Create participant record
     const participant = new Participant({
@@ -78,6 +97,8 @@ export async function POST(req: NextRequest) {
       score: percentageScore,
       submittedAt: new Date(),
       attemptCount: 1,
+      startedAt: body.startedAt ? new Date(body.startedAt) : undefined,
+      durationSeconds,
     });
 
     await participant.save();
@@ -89,6 +110,8 @@ export async function POST(req: NextRequest) {
           id: participant._id.toString(),
           name: participant.name,
           score: participant.score,
+          correctCount: correctCount,
+          totalQuestions: totalQuestions,
           submittedAt: participant.submittedAt,
         },
       },

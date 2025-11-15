@@ -16,6 +16,7 @@ interface Question {
   title: string;
   options: string[];
   points: number;
+  imageUrl?: string | null;
 }
 
 interface QuizState {
@@ -43,14 +44,48 @@ export default function QuizPage() {
   useEffect(() => {
     const name = localStorage.getItem('participantName');
     const email = localStorage.getItem('participantEmail');
+    const hasSubmitted = localStorage.getItem('quizSubmitted');
+    const submittedEmail = localStorage.getItem('quizSubmittedEmail');
+    const submittedAt = localStorage.getItem('quizSubmittedAt');
+    
     if (!name || !email) {
       router.push('/start');
       return;
     }
-    setParticipantName(name);
-    setParticipantEmail(email);
-    loadQuestions();
-  }, [router]);
+    
+    // Verify with backend whether this email has already taken the quiz
+    const checkStatus = async () => {
+      try {
+        if (
+          hasSubmitted === 'true' &&
+          submittedEmail === email &&
+          submittedAt
+        ) {
+          // Fast-path if same email already submitted in this browser
+          router.push('/thank-you');
+          return;
+        }
+        const status = await participantAPI.status(email);
+        if (status.hasTaken) {
+          // Persist flags so subsequent loads are fast
+          localStorage.setItem('quizSubmitted', 'true');
+          localStorage.setItem('quizSubmittedEmail', email);
+          localStorage.setItem('quizSubmittedAt', Date.now().toString());
+          router.push('/thank-you');
+          return;
+        }
+      } catch (e) {
+        // If status check fails, continue to load quiz for resilience
+        console.warn('Status check failed, continuing to quiz');
+      }
+      setParticipantName(name);
+      setParticipantEmail(email);
+      loadQuestions();
+    };
+
+    checkStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -63,10 +98,30 @@ export default function QuizPage() {
     try {
       setLoading(true);
       const data = await participantAPI.getQuestions();
-      setQuestions(data.questions);
+      
+      // Defensive check: ensure questions array exists and is valid
+      if (!data || !data.questions || !Array.isArray(data.questions)) {
+        throw new Error('Invalid response from server');
+      }
+      
+      // Filter out any invalid questions and ensure required fields exist
+      const validQuestions = data.questions.filter((q: any) => 
+        q && 
+        q.id && 
+        q.title && 
+        Array.isArray(q.options) && 
+        q.options.length > 0
+      );
+      
+      if (validQuestions.length === 0) {
+        throw new Error('No valid questions available');
+      }
+      
+      setQuestions(validQuestions);
       setQuiz((prev) => ({
         ...prev,
-        answers: data.questions.map((q) => ({
+        currentQuestion: 0, // Reset to first question
+        answers: validQuestions.map((q: any) => ({
           questionId: q.id,
           answer: -1, // -1 means not answered
         })),
@@ -74,6 +129,7 @@ export default function QuizPage() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load questions';
       toast.error(errorMessage);
+      console.error('Error loading questions:', error);
     } finally {
       setLoading(false);
     }
@@ -93,7 +149,7 @@ export default function QuizPage() {
     );
   }
 
-  if (questions.length === 0) {
+  if (questions.length === 0 && !loading) {
     return (
       <>
         <Navbar />
@@ -101,6 +157,27 @@ export default function QuizPage() {
           <div className="text-center">
             <div className="text-2xl font-bold mb-4">No questions available</div>
             <div className="text-foreground/60">Please check back later</div>
+            <button
+              onClick={() => router.push('/start')}
+              className="mt-4 px-4 py-2 bg-primary text-foreground rounded-lg hover:opacity-80"
+            >
+              Go Back
+            </button>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  // Defensive check: ensure current question exists
+  if (!questions[quiz.currentQuestion]) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen pt-24 pb-12 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-2xl font-bold mb-4">Error loading question</div>
+            <div className="text-foreground/60">Please refresh the page</div>
           </div>
         </main>
       </>
@@ -108,30 +185,44 @@ export default function QuizPage() {
   }
 
   const currentQ = questions[quiz.currentQuestion];
-  const currentAnswer = quiz.answers[quiz.currentQuestion]?.answer;
+  const currentAnswer = quiz.answers[quiz.currentQuestion]?.answer ?? -1;
 
   const handleSelectOption = (optionIndex: number) => {
-    const newAnswers = [...quiz.answers];
-    newAnswers[quiz.currentQuestion] = {
-      questionId: currentQ.id,
-      answer: optionIndex,
-    };
-    setQuiz({ ...quiz, answers: newAnswers });
+    setQuiz((prev) => {
+      const newAnswers = [...prev.answers];
+      const currentQuestion = questions[prev.currentQuestion];
+      const currentQuestionId = currentQuestion?.id;
+      if (currentQuestionId && optionIndex >= 0 && optionIndex < (currentQuestion?.options?.length || 0)) {
+        newAnswers[prev.currentQuestion] = {
+          questionId: currentQuestionId,
+          answer: optionIndex,
+        };
+      }
+      return { ...prev, answers: newAnswers };
+    });
   };
 
   const handleNext = () => {
-    if (quiz.currentQuestion < questions.length - 1) {
-      setQuiz({ ...quiz, currentQuestion: quiz.currentQuestion + 1 });
-    }
+    setQuiz((prev) => {
+      if (prev.currentQuestion < questions.length - 1) {
+        return { ...prev, currentQuestion: prev.currentQuestion + 1 };
+      }
+      return prev;
+    });
   };
 
   const handlePrevious = () => {
-    if (quiz.currentQuestion > 0) {
-      setQuiz({ ...quiz, currentQuestion: quiz.currentQuestion - 1 });
-    }
+    setQuiz((prev) => {
+      if (prev.currentQuestion > 0) {
+        return { ...prev, currentQuestion: prev.currentQuestion - 1 };
+      }
+      return prev;
+    });
   };
 
   const handleSubmit = async () => {
+    if (submitting) return; // Prevent double submission
+    
     if (!confirm('Are you sure you want to submit your answers? This action cannot be undone.')) {
       return;
     }
@@ -154,7 +245,13 @@ export default function QuizPage() {
       );
 
       localStorage.setItem('quizScore', result.participant.score.toString());
+      if (result.participant.correctCount !== undefined && result.participant.totalQuestions !== undefined) {
+        localStorage.setItem('quizCorrectCount', result.participant.correctCount.toString());
+        localStorage.setItem('quizTotalQuestions', result.participant.totalQuestions.toString());
+      }
       localStorage.setItem('quizSubmitted', 'true');
+      localStorage.setItem('quizSubmittedEmail', participantEmail);
+      localStorage.setItem('quizSubmittedAt', Date.now().toString());
       toast.success('Quiz submitted successfully!');
       router.push('/thank-you');
     } catch (error) {
@@ -185,11 +282,11 @@ export default function QuizPage() {
               <div>
                 <h1 className="text-3xl font-bold">Quiz</h1>
                 <p className="text-foreground/80">
-                  Question {quiz.currentQuestion + 1} of {questions.length}
+                  Question {Math.min(quiz.currentQuestion + 1, questions.length)} of {questions.length}
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-sm text-foreground/60 mb-2">Time: {formatTime(timeElapsed)}</div>
+                {/* <div className="text-sm text-foreground/60 mb-2">Time: {formatTime(timeElapsed)}</div> */}
                 <Timer duration={600} />
               </div>
             </div>
@@ -199,7 +296,7 @@ export default function QuizPage() {
               <motion.div
                 className="h-full bg-gradient-to-r from-primary to-secondary"
                 animate={{
-                  width: `${((quiz.currentQuestion + 1) / questions.length) * 100}%`,
+                  width: questions.length > 0 ? `${((quiz.currentQuestion + 1) / questions.length) * 100}%` : '0%',
                 }}
                 transition={{ duration: 0.3 }}
               />
@@ -214,10 +311,12 @@ export default function QuizPage() {
             className="flex justify-center mb-8"
           >
             <QuestionCard
-              question={currentQ.title}
-              options={currentQ.options}
-              selectedOption={currentAnswer !== -1 ? currentQ.options[currentAnswer] : null}
+              question={currentQ?.title || ''}
+              options={Array.isArray(currentQ?.options) ? currentQ.options : []}
+              imageUrl={currentQ?.imageUrl || null}
+              selectedOption={currentAnswer !== -1 && currentAnswer !== undefined && currentQ?.options?.[currentAnswer] ? currentQ.options[currentAnswer] : null}
               onSelect={(option) => {
+                if (!currentQ?.options) return;
                 const index = currentQ.options.indexOf(option);
                 if (index !== -1) {
                   handleSelectOption(index);

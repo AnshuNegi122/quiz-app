@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
     const token = generateToken({
       id: admin._id.toString(),
       username: admin.username,
+      role: 'admin',
     });
 
     // Create response
@@ -66,8 +67,9 @@ export async function POST(req: NextRequest) {
     response.cookies.set('adminToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
     });
 
     return response;

@@ -1,12 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { BarChart3, HelpCircle, Users, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { adminAPI } from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await adminAPI.logout();
+      localStorage.removeItem('adminLoggedIn');
+      toast.success('Logged out successfully');
+      router.push('/admin/login');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Logout failed';
+      toast.error(errorMessage);
+    }
+  };
 
   const links = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -49,7 +64,10 @@ export default function AdminSidebar() {
       </nav>
 
       <div className="mt-12 pt-6 border-t border-border">
-        <button className="flex items-center gap-3 px-4 py-3 text-foreground/80 hover:text-accent transition-colors w-full">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 text-foreground/80 hover:text-accent transition-colors w-full"
+        >
           <LogOut size={20} />
           <span className="font-medium">Logout</span>
         </button>

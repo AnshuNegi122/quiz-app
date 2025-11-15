@@ -15,6 +15,7 @@ interface Question {
   options: string[];
   correctOption: number;
   points: number;
+  imageUrl?: string | null;
 }
 
 export default function AdminQuestionsPage() {
@@ -34,6 +35,9 @@ export default function AdminQuestionsPage() {
     correctOption: 0,
     points: 1,
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
@@ -70,6 +74,9 @@ export default function AdminQuestionsPage() {
       correctOption: 0,
       points: 1,
     });
+    setSelectedImage(null);
+    setImagePreview(null);
+    setExistingImageUrl(null);
     setModal({ isOpen: true, mode: 'add' });
   };
 
@@ -83,29 +90,54 @@ export default function AdminQuestionsPage() {
       correctOption: q.correctOption,
       points: q.points,
     });
+    setSelectedImage(null);
+    setImagePreview(null);
+    setExistingImageUrl(q.imageUrl || null);
     setModal({ isOpen: true, mode: 'edit', data: q });
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setExistingImageUrl(null);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     try {
-      const questionData = {
-        title: formData.title,
-        options: [formData.option1, formData.option2, formData.option3, formData.option4],
-        correctOption: formData.correctOption,
-        points: formData.points,
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('options', JSON.stringify([formData.option1, formData.option2, formData.option3, formData.option4]));
+      formDataToSend.append('correctOption', formData.correctOption.toString());
+      formDataToSend.append('points', formData.points.toString());
+      
+      if (selectedImage) {
+        formDataToSend.append('image', selectedImage);
+      } else if (modal.mode === 'edit') {
+        // Send existing imageUrl or empty string if removed
+        formDataToSend.append('imageUrl', existingImageUrl || '');
+      }
 
       if (modal.mode === 'add') {
-        await adminAPI.createQuestion(questionData);
+        await adminAPI.createQuestion(formDataToSend);
         toast.success('Question created successfully!');
       } else if (modal.data?.id) {
-        await adminAPI.updateQuestion(modal.data.id, questionData);
+        await adminAPI.updateQuestion(modal.data.id, formDataToSend);
         toast.success('Question updated successfully!');
       }
 
       setModal({ isOpen: false, mode: 'add' });
+      setSelectedImage(null);
+      setImagePreview(null);
+      setExistingImageUrl(null);
       loadQuestions();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to save question';
@@ -251,9 +283,9 @@ export default function AdminQuestionsPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg"
+              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto"
             >
-              <FrostCard>
+              <FrostCard className="m-4">
                 <div className="flex justify-between items-start mb-6">
                   <h2 className="text-2xl font-bold">
                     {modal.mode === 'add' ? 'Add Question' : 'Edit Question'}
@@ -276,6 +308,38 @@ export default function AdminQuestionsPage() {
                       rows={2}
                       className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Image (Optional)</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                    />
+                    {(imagePreview || existingImageUrl) && (
+                      <div className="mt-4">
+                        <img
+                          src={imagePreview || existingImageUrl || ''}
+                          alt="Preview"
+                          className="max-w-full h-auto max-h-64 rounded-lg border border-border"
+                        />
+                        {existingImageUrl && !imagePreview && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExistingImageUrl(null);
+                              setSelectedImage(null);
+                              setImagePreview(null);
+                            }}
+                            className="mt-2 text-sm text-accent hover:underline"
+                          >
+                            Remove image
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {['option1', 'option2', 'option3', 'option4'].map((opt, i) => (

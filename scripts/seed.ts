@@ -30,53 +30,53 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
-const sampleQuestions = [
-  {
-    title: 'What does HTML stand for?',
-    options: [
-      'Hyper Text Markup Language',
-      'High Tech Modern Language',
-      'Home Tool Markup Language',
-      'Hyperlinks and Text Markup Language',
-    ],
-    correctOption: 0,
-    points: 1,
-  },
-  {
-    title: 'Which of the following is a JavaScript framework?',
-    options: ['React', 'Django', 'Laravel', 'Flask'],
-    correctOption: 0,
-    points: 1,
-  },
-  {
-    title: 'What is the purpose of CSS?',
-    options: [
-      'To style HTML elements',
-      'To create databases',
-      'To perform calculations',
-      'To manage server requests',
-    ],
-    correctOption: 0,
-    points: 1,
-  },
-  {
-    title: 'Which language is known as the language of web?',
-    options: ['Python', 'JavaScript', 'Java', 'C++'],
-    correctOption: 1,
-    points: 1,
-  },
-  {
-    title: 'What does API stand for?',
-    options: [
-      'Application Programming Interface',
-      'Advanced Programming Integration',
-      'Application Process Integration',
-      'Advanced Process Interface',
-    ],
-    correctOption: 0,
-    points: 1,
-  },
-];
+// const sampleQuestions = [
+//   {
+//     title: 'What does HTML stand for?',
+//     options: [
+//       'Hyper Text Markup Language',
+//       'High Tech Modern Language',
+//       'Home Tool Markup Language',
+//       'Hyperlinks and Text Markup Language',
+//     ],
+//     correctOption: 0,
+//     points: 1,
+//   },
+//   {
+//     title: 'Which of the following is a JavaScript framework?',
+//     options: ['React', 'Django', 'Laravel', 'Flask'],
+//     correctOption: 0,
+//     points: 1,
+//   },
+//   {
+//     title: 'What is the purpose of CSS?',
+//     options: [
+//       'To style HTML elements',
+//       'To create databases',
+//       'To perform calculations',
+//       'To manage server requests',
+//     ],
+//     correctOption: 0,
+//     points: 1,
+//   },
+//   {
+//     title: 'Which language is known as the language of web?',
+//     options: ['Python', 'JavaScript', 'Java', 'C++'],
+//     correctOption: 1,
+//     points: 1,
+//   },
+//   {
+//     title: 'What does API stand for?',
+//     options: [
+//       'Application Programming Interface',
+//       'Advanced Programming Integration',
+//       'Application Process Integration',
+//       'Advanced Process Interface',
+//     ],
+//     correctOption: 0,
+//     points: 1,
+//   },
+// ];
 
 async function seed() {
   try {
@@ -119,8 +119,8 @@ async function seed() {
 
     // Create sample questions
     console.log('❓ Creating sample questions...');
-    const questions = await Question.insertMany(sampleQuestions);
-    console.log(`✅ Created ${questions.length} questions`);
+    // const questions = await Question.insertMany(sampleQuestions);
+    // console.log(`✅ Created ${questions.length} questions`);
     console.log('');
 
     console.log('🎉 Seed completed successfully!');

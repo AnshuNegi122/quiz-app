@@ -5,6 +5,7 @@ export interface IQuestion extends Document {
   options: string[]; // must be length 4
   correctOption: number; // index 0-3
   points: number;
+  imageUrl?: string | null;
   createdAt: Date;
 }
 
@@ -33,6 +34,10 @@ const QuestionSchema: Schema = new Schema(
       type: Number,
       default: 1,
       min: 1,
+    },
+    imageUrl: {
+      type: String,
+      default: null,
     },
     createdAt: {
       type: Date,

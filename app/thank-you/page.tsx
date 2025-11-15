@@ -9,17 +9,24 @@ import { Trophy, Share2, Home } from 'lucide-react';
 
 export default function ThankYouPage() {
   const [score, setScore] = useState<number | null>(null);
+  const [correctCount, setCorrectCount] = useState<number | null>(null);
+  const [totalQuestions, setTotalQuestions] = useState<number | null>(null);
   const [name, setName] = useState('');
 
   useEffect(() => {
     const savedScore = localStorage.getItem('quizScore');
+    const savedCorrectCount = localStorage.getItem('quizCorrectCount');
+    const savedTotalQuestions = localStorage.getItem('quizTotalQuestions');
     const savedName = localStorage.getItem('participantName');
-    setScore(savedScore ? parseInt(savedScore) : 0);
+    
+    setScore(savedScore ? parseInt(savedScore) : null);
+    setCorrectCount(savedCorrectCount ? parseInt(savedCorrectCount) : null);
+    setTotalQuestions(savedTotalQuestions ? parseInt(savedTotalQuestions) : null);
     setName(savedName || 'Participant');
   }, []);
 
   const getMessage = () => {
-    if (!score) return 'Thank you for participating!';
+    if (score === null) return 'Thank you for participating!';
     if (score >= 80) return 'Excellent Performance!';
     if (score >= 60) return 'Great Job!';
     return 'Good Effort!';
@@ -45,20 +52,6 @@ export default function ThankYouPage() {
 
             <h1 className="text-4xl font-bold mb-2">Quiz Complete!</h1>
             <p className="text-foreground/80 mb-8">{getMessage()}</p>
-
-            {score !== null && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
-                className="mb-8 p-6 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg border border-primary/20"
-              >
-                <p className="text-foreground/80 mb-2">Your Score</p>
-                <p className="text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  {score}%
-                </p>
-              </motion.div>
-            )}
 
             <p className="text-foreground/80 mb-8">
               Thank you for taking the FrostByte challenge, {name}!
