@@ -47,6 +47,7 @@ export async function GET(
         correctOption: question.correctOption,
         points: question.points,
         imageUrl: question.imageUrl || null,
+        code: question.code || null,
         createdAt: question.createdAt,
       },
     });
@@ -84,6 +85,7 @@ export async function PUT(
     const points = parseInt(formData.get('points') as string) || 1;
     const imageFile = formData.get('image') as File | null;
     const imageUrl = formData.get('imageUrl') as string | null;
+    const code = formData.get('code') as string | null;
 
     const options = JSON.parse(optionsStr);
 
@@ -128,6 +130,7 @@ export async function PUT(
       correctOption,
       points: points || 1,
       imageUrl: finalImageUrl,
+      code: code || null,
     };
 
     const question = await Question.findByIdAndUpdate(id, updateData, { new: true });
@@ -148,6 +151,7 @@ export async function PUT(
         correctOption: question.correctOption,
         points: question.points,
         imageUrl: question.imageUrl || null,
+        code: question.code || null,
         createdAt: question.createdAt,
       },
     });

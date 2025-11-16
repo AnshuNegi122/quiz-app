@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
         correctOption: q.correctOption,
         points: q.points,
         imageUrl: q.imageUrl || null,
+        code: q.code || null,
         createdAt: q.createdAt,
       })),
     });
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
     const points = parseInt(formData.get('points') as string) || 1;
     const imageFile = formData.get('image') as File | null;
     const imageUrl = formData.get('imageUrl') as string | null;
+    const code = formData.get('code') as string | null;
 
     const options = JSON.parse(optionsStr);
 
@@ -95,6 +97,7 @@ export async function POST(req: NextRequest) {
       correctOption,
       points: points || 1,
       imageUrl: finalImageUrl,
+      code: code || null,
     });
 
     await question.save();
@@ -109,6 +112,7 @@ export async function POST(req: NextRequest) {
           correctOption: question.correctOption,
           points: question.points,
           imageUrl: question.imageUrl || null,
+          code: question.code || null,
           createdAt: question.createdAt,
         },
       },

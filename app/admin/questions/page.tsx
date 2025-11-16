@@ -15,7 +15,7 @@ interface Question {
   options: string[];
   correctOption: number;
   points: number;
-  imageUrl?: string | null;
+  code?: string | null;
 }
 
 export default function AdminQuestionsPage() {
@@ -34,11 +34,9 @@ export default function AdminQuestionsPage() {
     option4: '',
     correctOption: 0,
     points: 1,
+    code: '',
   });
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
-
+      
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
     if (!isLoggedIn) {
@@ -73,10 +71,8 @@ export default function AdminQuestionsPage() {
       option4: '',
       correctOption: 0,
       points: 1,
+      code: '',
     });
-    setSelectedImage(null);
-    setImagePreview(null);
-    setExistingImageUrl(null);
     setModal({ isOpen: true, mode: 'add' });
   };
 
@@ -89,26 +85,12 @@ export default function AdminQuestionsPage() {
       option4: q.options[3],
       correctOption: q.correctOption,
       points: q.points,
+      code: q.code || '',
     });
-    setSelectedImage(null);
-    setImagePreview(null);
-    setExistingImageUrl(q.imageUrl || null);
     setModal({ isOpen: true, mode: 'edit', data: q });
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      setExistingImageUrl(null);
-    }
-  };
-
+  
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -118,13 +100,7 @@ export default function AdminQuestionsPage() {
       formDataToSend.append('options', JSON.stringify([formData.option1, formData.option2, formData.option3, formData.option4]));
       formDataToSend.append('correctOption', formData.correctOption.toString());
       formDataToSend.append('points', formData.points.toString());
-      
-      if (selectedImage) {
-        formDataToSend.append('image', selectedImage);
-      } else if (modal.mode === 'edit') {
-        // Send existing imageUrl or empty string if removed
-        formDataToSend.append('imageUrl', existingImageUrl || '');
-      }
+      formDataToSend.append('code', formData.code || '');
 
       if (modal.mode === 'add') {
         await adminAPI.createQuestion(formDataToSend);
@@ -135,9 +111,6 @@ export default function AdminQuestionsPage() {
       }
 
       setModal({ isOpen: false, mode: 'add' });
-      setSelectedImage(null);
-      setImagePreview(null);
-      setExistingImageUrl(null);
       loadQuestions();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to save question';
@@ -311,35 +284,14 @@ export default function AdminQuestionsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold mb-2">Image (Optional)</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                    <label className="block text-sm font-semibold mb-2">Code (Optional)</label>
+                    <textarea
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                      rows={8}
+                      placeholder="Paste code snippet here..."
+                      className="font-mono w-full px-4 py-2 rounded-lg border border-border bg-background focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     />
-                    {(imagePreview || existingImageUrl) && (
-                      <div className="mt-4">
-                        <img
-                          src={imagePreview || existingImageUrl || ''}
-                          alt="Preview"
-                          className="max-w-full h-auto max-h-64 rounded-lg border border-border"
-                        />
-                        {existingImageUrl && !imagePreview && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setExistingImageUrl(null);
-                              setSelectedImage(null);
-                              setImagePreview(null);
-                            }}
-                            className="mt-2 text-sm text-accent hover:underline"
-                          >
-                            Remove image
-                          </button>
-                        )}
-                      </div>
-                    )}
                   </div>
 
                   {['option1', 'option2', 'option3', 'option4'].map((opt, i) => (

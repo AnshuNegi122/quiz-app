@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     await connectDB();
 
     const questions = await Question.find()
-      .select('title options points imageUrl')
+      .select('title options points imageUrl code')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
       options: Array.isArray(q.options) ? q.options : [],
       points: q.points || 1,
       imageUrl: q.imageUrl || null,
+      code: q.code || null,
     })).filter((q) => q.id && q.title && q.options.length > 0); // Filter out invalid questions
 
     return NextResponse.json({ questions: questionsWithoutAnswers });

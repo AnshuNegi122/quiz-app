@@ -80,6 +80,8 @@ export const adminAPI = {
         options: string[];
         correctOption: number;
         points: number;
+        imageUrl?: string | null;
+        code?: string | null;
         createdAt: string;
       }>;
     }>(response);
@@ -100,6 +102,7 @@ export const adminAPI = {
         correctOption: number;
         points: number;
         imageUrl?: string | null;
+        code?: string | null;
         createdAt: string;
       };
     }>(response);
@@ -120,6 +123,7 @@ export const adminAPI = {
         correctOption: number;
         points: number;
         imageUrl?: string | null;
+        code?: string | null;
         createdAt: string;
       };
     }>(response);
@@ -156,6 +160,7 @@ export const participantAPI = {
         options: string[];
         points: number;
         imageUrl?: string | null;
+        code?: string | null;
       }>;
     }>(response);
   },

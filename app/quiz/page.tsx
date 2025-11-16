@@ -16,7 +16,7 @@ interface Question {
   title: string;
   options: string[];
   points: number;
-  imageUrl?: string | null;
+  code?: string | null;
 }
 
 interface QuizState {
@@ -313,7 +313,7 @@ export default function QuizPage() {
             <QuestionCard
               question={currentQ?.title || ''}
               options={Array.isArray(currentQ?.options) ? currentQ.options : []}
-              imageUrl={currentQ?.imageUrl || null}
+              code={currentQ?.code || null}
               selectedOption={currentAnswer !== -1 && currentAnswer !== undefined && currentQ?.options?.[currentAnswer] ? currentQ.options[currentAnswer] : null}
               onSelect={(option) => {
                 if (!currentQ?.options) return;

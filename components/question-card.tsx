@@ -6,7 +6,7 @@ import FrostCard from './frost-card';
 interface QuestionCardProps {
   question: string;
   options: string[];
-  imageUrl?: string | null;
+  code?: string | null;
   selectedOption: string | null;
   onSelect: (option: string) => void;
 }
@@ -14,19 +14,17 @@ interface QuestionCardProps {
 export default function QuestionCard({
   question,
   options,
-  imageUrl,
+  code,
   selectedOption,
   onSelect,
 }: QuestionCardProps) {
   return (
     <FrostCard className="w-full max-w-2xl">
-      {imageUrl && (
+      {code && (
         <div className="mb-6">
-          <img
-            src={imageUrl}
-            alt="Question illustration"
-            className="w-full h-auto max-h-96 object-contain rounded-lg border border-border"
-          />
+          <pre className="w-full max-h-96 overflow-auto rounded-lg border border-border bg-surface/50 p-4 text-sm text-foreground">
+            <code>{code}</code>
+          </pre>
         </div>
       )}
       <h2 className="text-2xl font-bold mb-8 text-foreground">{question}</h2>
