@@ -287,7 +287,7 @@ export default function QuizPage() {
               </div>
               <div className="text-right">
                 {/* <div className="text-sm text-foreground/60 mb-2">Time: {formatTime(timeElapsed)}</div> */}
-                <Timer duration={600} />
+                <Timer duration={3600} />
               </div>
             </div>
 
