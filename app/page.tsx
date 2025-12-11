@@ -47,10 +47,10 @@ export default function Home() {
               <Snowflake className="w-16 h-16 text-primary" />
             </motion.div>
             <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              FrostByte Challenge
+              ACM Technical Round
             </h1>
             <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto mb-8">
-              Test your knowledge in an icy realm of tech challenges. Compete, learn, and conquer the FrostByte Quiz!
+              Test your knowledge in an icy realm of tech challenges. Compete, learn, and conquer the techinal round!
             </p>
             <Link
               href="/start"
